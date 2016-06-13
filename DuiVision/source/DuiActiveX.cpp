@@ -196,6 +196,150 @@ public:
     }
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// CActiveXCommandHandler -- activex控件的命令处理类,用于控件和宿主程序的交互调用
+
+// 定义DISPID
+#define DISPID_EX_HANDLER	1
+
+class CActiveXCommandHandler : public IDispatch
+{
+	long		refcount;
+	_bstr_t		m_bstrParam;	// 参数名
+public:
+
+	CActiveXCommandHandler() {refcount = 0;}
+	//virtual ~CActiveXCommandHandler() {}
+
+	STDMETHOD(QueryInterface)(REFIID iid, LPVOID* ppvObj)
+	{
+		if (iid == IID_IDispatch)
+		{
+			*ppvObj = (IDispatch*)this;
+			AddRef();
+		}else
+		{
+			return E_NOINTERFACE;
+			//return E_NOTIMPL;
+		}
+		return S_OK;
+	}
+
+	STDMETHOD_(ULONG,AddRef)()
+	{
+		InterlockedIncrement(&refcount);
+		return refcount;
+	}
+
+	STDMETHOD_(ULONG,Release)()
+	{
+		InterlockedDecrement(&refcount);
+		if (refcount == 0)
+			delete this;
+		return refcount;
+	}
+
+	STDMETHOD(GetTypeInfoCount)(/* [out] */ UINT *pctinfo)
+	{
+		return S_OK;
+	}
+
+	STDMETHOD(GetTypeInfo)(
+      /* [in] */ UINT iTInfo,
+      /* [in] */ LCID lcid,
+      /* [out] */ ITypeInfo **ppTInfo)
+	{
+		return S_OK;
+	}
+
+	STDMETHOD(GetIDsOfNames)( 
+            /* [in] */ REFIID riid,
+            /* [size_is][in] */ LPOLESTR *rgszNames,
+            /* [in] */ UINT cNames,
+            /* [in] */ LCID lcid,
+            /* [size_is][out] */ DISPID *rgDispId)
+	{
+		m_bstrParam = *rgszNames;
+		*rgDispId = DISPID_EX_HANDLER;
+		return S_OK;
+	}
+
+	STDMETHOD(Invoke)( 
+            /* [in] */ DISPID dispIdMember,
+            /* [in] */ REFIID riid,
+            /* [in] */ LCID lcid,
+            /* [in] */ WORD wFlags,
+            /* [out][in] */ DISPPARAMS *pDispParams,
+            /* [out] */ VARIANT *pVarResult,
+            /* [out] */ EXCEPINFO *pExcepInfo,
+            /* [out] */ UINT *puArgErr)
+	{
+		if(dispIdMember==DISPID_EX_HANDLER)
+		{
+			if(wFlags == DISPATCH_PROPERTYGET)	// 获取属性
+			{
+				/*IInterp* pInterp = GetCurrentInterp();
+				if(pInterp)
+				{
+					CString strValue = pInterp->GetVar(m_bstrParam);
+					COleVariant* pRetVal = (COleVariant*)pVarResult;
+					*pRetVal = strValue;
+				}*/
+			}else
+			if(wFlags == DISPATCH_PROPERTYPUT)	// 设置属性
+			{
+				/*IInterp* pInterp = GetCurrentInterp();
+				if(pInterp)
+				{
+					if(pDispParams->cArgs > 0)
+					{
+						COleVariant* pRetVal = (COleVariant*)(pDispParams->rgvarg);
+						CString str(pRetVal->bstrVal);
+						pInterp->SetVar(m_bstrParam, str);
+					}
+				}*/
+			}else
+			if((wFlags & DISPATCH_METHOD) != 0)	// 调用方法
+			{
+				/*IInterp* pInterp = GetCurrentInterp();
+				if(pInterp)
+				{
+					CStringArray asParam;
+					// 说明:参数数组pDispParams为倒序,且命名参数在前面,此处省略命名参数
+					int nArgs = pDispParams->cArgs + pDispParams->cNamedArgs;
+					int nNamedArgs = pDispParams->cNamedArgs;
+					for(int i = nArgs-1; i >= nNamedArgs; i--)
+					{
+						COleVariant* pRetVal = (COleVariant*)(&(pDispParams->rgvarg[i]));
+						CString str(pRetVal->bstrVal);
+						asParam.Add(str);
+					}
+					CString strRes = "";
+					if(pInterp->CallMethod(m_bstrParam, asParam))
+					{
+						strRes = pInterp->GetResult();
+					}else
+					{
+						strRes = pInterp->GetResult();
+					}
+					if((wFlags & DISPATCH_PROPERTYGET) != 0)
+					{
+						// 可以获取返回值
+						COleVariant* pRetVal = (COleVariant*)pVarResult;
+						*pRetVal = strRes;
+					}
+				}*/
+			}
+
+              //MessageBox(0,"Hello World","Hello",0); //place your code here
+			  //frmweb->Edit1->Text="Hello World(这也可以？)";
+		}
+
+		return S_OK;
+	}
+	
+};
+
 /////////////////////////////////////////////////////////////////////////////////////
 // CActiveXCtrl
 
@@ -960,15 +1104,16 @@ STDMETHODIMP CActiveXCtrl::GetDropTarget(
 	return E_NOTIMPL;
 }
 
+// 获取扩展的命令处理对象,用于控件和宿主程序的交互,调用宿主程序的函数
 STDMETHODIMP CActiveXCtrl::GetExternal( 
             /* [out] */ IDispatch __RPC_FAR *__RPC_FAR* ppDispatch)
 {
 	TRACE(_T("AX: CActiveXCtrl::GetExternal\n"));
 	// 创建扩展命令处理器对象
-	//CExCommandHandler* pHandler = new CExCommandHandler();
-	//pHandler->QueryInterface(IID_IDispatch, (void**)ppDispatch);
-	//return S_OK;
-	return E_NOTIMPL;
+	CActiveXCommandHandler* pHandler = new CActiveXCommandHandler();
+	pHandler->QueryInterface(IID_IDispatch, (void**)ppDispatch);
+	return S_OK;
+	//return E_NOTIMPL;
 }
         
 STDMETHODIMP CActiveXCtrl::TranslateUrl( 
@@ -1715,7 +1860,21 @@ bool CDuiActiveX::DoCreateControl()
         Hr = ::CoCreateInstance(m_clsid, NULL, CLSCTX_ALL, IID_IOleControl, (LPVOID*)&pOleControl);
 		if( FAILED(Hr) )
 		{
-			DuiSystem::LogEvent(LOG_LEVEL_ERROR, _T("CoCreateInstance %s failed"), m_clsid);
+			LPOLESTR lpwClsid = NULL;
+			Hr = StringFromCLSID(m_clsid, &lpwClsid);
+			if (SUCCEEDED(Hr))
+			{
+				USES_CONVERSION;
+				LPCTSTR lpszClsid = OLE2T(lpwClsid);
+				DuiSystem::LogEvent(LOG_LEVEL_ERROR, _T("CoCreateInstance %s failed"), lpszClsid);
+				IMalloc * pMalloc = NULL;
+				Hr = ::CoGetMalloc(1, &pMalloc);	// 取得 IMalloc
+				if (SUCCEEDED(Hr))
+				{
+					pMalloc->Free(lpwClsid);		// 释放ProgID内存
+					pMalloc->Release();				// 释放IMalloc
+				}
+			}
 		}
 		// 控件激活
 		OnAxActivate(pOleControl);
@@ -1958,6 +2117,14 @@ HRESULT CDuiWebBrowserCtrl::Navigate(CString strUrl)
 	GetControl(IID_IWebBrowser2, (void**)&pWebBrowser);
 	if( pWebBrowser != NULL )
 	{
+		if(strUrl.Find(_T("file://")) == 0)
+		{
+			strUrl.Delete(0, 7);
+			if(strUrl.Find(_T(":")) == -1)
+			{
+				strUrl = DuiSystem::GetSkinPath() + strUrl;
+			}
+		}
 		BSTR bsUrl = strUrl.AllocSysString();
 		hr = pWebBrowser->Navigate(bsUrl,NULL,NULL,NULL,NULL);
 		pWebBrowser->Release();
@@ -2165,7 +2332,7 @@ bool CDuiFlashCtrl::isExistFlashActiveX()
 	HKEY hKey = NULL;
 
 	// 如果注册表中没有FlashPlayerX，则返回false
-	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE,TEXT("SOFTWARE\\Macromedia\\FlashPlayerActiveX"),0,KEY_READ,&hKey)!=ERROR_SUCCESS)
+	if(RegOpenKeyEx(HKEY_LOCAL_MACHINE,_T("SOFTWARE\\Macromedia\\FlashPlayerActiveX"),0,KEY_READ,&hKey)!=ERROR_SUCCESS)
 		return false;
 
 	std::wstring strValueName;
@@ -2175,10 +2342,10 @@ bool CDuiFlashCtrl::isExistFlashActiveX()
 	DWORD nValueNameBufferLength=1024, nValueType, nDataBudderSize=1024;
 
 	int i=0;  
-	while(RegEnumValue(hKey,i++, (LPWSTR)strValueName.c_str(), &nValueNameBufferLength, NULL, &nValueType, (BYTE*)strDataBuffer.c_str(), &nDataBudderSize) != ERROR_NO_MORE_ITEMS)  
+	while(RegEnumValueW(hKey,i++, (LPWSTR)strValueName.c_str(), &nValueNameBufferLength, NULL, &nValueType, (BYTE*)strDataBuffer.c_str(), &nDataBudderSize) != ERROR_NO_MORE_ITEMS)  
 	{  
 		std::wstring strName(strValueName.c_str());
-		if (strName.compare(_T("PlayerPath")) == 0)
+		if (strName.compare(L"PlayerPath") == 0)
 		{
 
 			if( (_waccess(std::wstring(strDataBuffer.c_str()).c_str(), 0 )) == -1 )
