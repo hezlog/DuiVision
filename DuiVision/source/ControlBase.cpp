@@ -41,6 +41,7 @@ CControlBase::CControlBase(HWND hWnd, CDuiObject* pDuiObject)
 	m_bRunTime = false;
 	m_bImageUseECM = false;
 	m_bDragEnable = false;
+	m_bDropFileEnable = false;
 
 	m_nShortcutKey = 0;
 	m_nShortcutFlag = 0;
@@ -64,6 +65,7 @@ CControlBase::CControlBase(HWND hWnd, CDuiObject* pDuiObject)
 	m_bDuiMsgMouseRUp = FALSE;
 	m_bDuiMsgMouseRDblClk = FALSE;
 	m_bDuiMsgKeyDown = FALSE;
+	m_bDuiMsgFocusChange = FALSE;
 	m_bMouseLeave = TRUE;
 }
 
@@ -95,6 +97,7 @@ CControlBase::CControlBase(HWND hWnd, CDuiObject* pDuiObject, UINT uControlID, C
 	m_bRunTime = false;
 	m_bImageUseECM = false;
 	m_bDragEnable = false;
+	m_bDropFileEnable = false;
 
 	m_nWidth = 0;
 	m_nHeight = 0;
@@ -116,7 +119,8 @@ CControlBase::CControlBase(HWND hWnd, CDuiObject* pDuiObject, UINT uControlID, C
 	m_bDuiMsgMouseRDown = FALSE;
 	m_bDuiMsgMouseRUp = FALSE;
 	m_bDuiMsgMouseRDblClk = FALSE;
-	m_bDuiMsgKeyDown = TRUE;
+	m_bDuiMsgKeyDown = FALSE;
+	m_bDuiMsgFocusChange = FALSE;
 	m_bMouseLeave = TRUE;
 }
 
@@ -343,6 +347,13 @@ BOOL CControlBase::OnFocus(BOOL bFocus)
 // 设置控件焦点
 BOOL CControlBase::SetControlFocus(BOOL bFocus)
 {
+	// 发送控件焦点变化的DUI消息
+	if(m_bDuiMsgFocusChange)
+	{
+		// wParam表示控件获取焦点还是取消焦点状态
+		SendMessage(MSG_FOCUS_CHANGE, (WPARAM)bFocus, (LPARAM)0);
+	}
+
 	// 如果焦点取消,则设置每个子控件的焦点状态,解决插件中的控件焦点无法取消的问题
 	if(!bFocus)
 	{
@@ -1143,9 +1154,39 @@ BOOL CControlBase::OnControlSetDuiMsg(LPCTSTR lpszDuiMsg)
 	{
 		m_bDuiMsgKeyDown = TRUE;
 		return TRUE;
+	}else
+	if(strDuiMsg == _T("focuschange"))		// 发送控件焦点状态变化的DUI消息
+	{
+		m_bDuiMsgFocusChange = TRUE;
+		return TRUE;
 	}
 
 	return FALSE;
+}
+
+// 鼠标拖拽文件事件处理
+BOOL CControlBase::OnControlDropFile(CPoint point, CString strFileName)
+{
+	if(!m_bIsVisible || !m_bRresponse) return false;
+	
+	BOOL bRresponse = false;
+	if(m_pControl)
+	{
+		// 判断当前活动控件
+		if(m_pControl->PtInRect(point))
+		{
+			return m_pControl->OnControlDropFile(point, strFileName);
+		}
+	}
+
+	if(PtInRect(point) && GetDropFileEnable())
+	{
+		// 在此控件范围内,并且控件设置了允许拖拽文件的标识,则发送消息
+		SendMessage(MSG_DROP_FILE, (WPARAM)(&point), (LPARAM)(&strFileName));
+		return true;
+	}
+
+	return false;
 }
 
 BOOL CControlBase::OnTimer()

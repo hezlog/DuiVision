@@ -3,7 +3,7 @@
 <div pos="0,75,-0,-0" >
 
 	<text crtext="800000" crmark="800000" align="center"
-		pos="0,5,-0,25" title="表格控件" font="big" show="1" />
+		pos="0,5,-0,25" title="表格控件(支持拖拽文件到表格中)" font="big" show="1" />
 	
 	<gridctrl name="gridctrl_1" pos="20,30,-20,-5" show="1"
 		img-scroll="skin:IDB_SCROLL_V" img-scrollh="skin:IDB_SCROLL_H" img-sep="skin:IDB_LINE_RP"
@@ -13,7 +13,7 @@
 		font="default" align="left" valign="middle"
 		crtext="255,64,64,64" crhover="128,0,0" crpush="0,112,235"
 		crtitle="32,32,32" crsep="200,160,160,160" crrowhover="50,128,128,128"
-		down-row="0" >
+		down-row="0" dropfile="1" >
 		<column title="列1" width="400" />
 		<column title="列2" width="120" />
 		<column title="列3" width="80" align="center" />
@@ -58,7 +58,12 @@
 			<item title="Axialis IconWorkshop" crtext="640064" content="1.易用性改进" font-title="1" />
 			<item title="已装：4.9.0.0" content="最新：6.8.1.2" />
 			<item title="13M" />
-			<item link="一键安装" linkaction="dlg:dlg_login"/>
+			<item>
+				<edit name="edit_gridctrl_1" skin="IDB_EDIT" left-image="skin:IDB_COMPUTER"
+					pos="0,10" width="110" height="30" title="" tip="演示表格中的输入框"
+					multiline="0" wantreturn="1" autohscroll="1" autovscroll="0" number="0" readonly="0" maxchar="50"
+					font="default" crtip="128,128,128,128" />
+			</item>
 		</row>
 		<row image="skins\icon\adrule_rename.png" check="0" crtext="128,128,0">
 			<item title="为知笔记" content="1.改进了博客发布功能;2.改进了编写日记功能" font-title="1" />

@@ -147,9 +147,10 @@ width-lt,height-lt,width-rb,height-rb" />
 				
 					<edit name="edit1" img-count="2" image="skins\default\edit_border2.png" small-image="skin:IDB_KEY_BOARD"
 							pos="50,20" width="200" height="28" title="test"
-							crback="255,128,224,128"
+							crback="255,96,224,224"
 							multiline="0" autohscroll="1" autovscroll="0" number="0" readonly="0" maxchar="50"
-							font="big" />
+							font="big"
+							duimsg="focuschange" />
 					
 					<edit name="edit2" skin="IDB_EDIT" small-image="skin:IDB_KEY_BOARD"
 							pos="50,60,-20,110" title="test"
@@ -259,13 +260,13 @@ width-lt,height-lt,width-rb,height-rb" />
 			<text pos="50,20,250,40" crtext="808080" title="动画图片：" />
 			
 			<animateimg name="animateimg_scan_1" skin="IDB_SCAN_STATUS_360" show="1"
-				pos="50,50" width="102" height="102" index="0" maxindex="17" timer-count="20" run="true" />
+				pos="50,50" width="102" height="102" index="0" maxindex="17" timer-count="20" run="1" />
 			
 			<animateimg name="animateimg_repair_1" skin="IDB_REPAIR_STATUS_360" show="1"
-				pos="200,50" width="102" height="102" index="0" maxindex="17" timer-count="40" run="true" />
+				pos="200,50" width="102" height="102" index="0" maxindex="17" timer-count="40" run="1" />
 			
 			<animateimg name="animateimg_scan_2" skin="IDB_SCAN_ANIMATE" show="1"
-				pos="350,50" width="16" height="16" index="0" maxindex="12" timer-count="30" run="true" />
+				pos="350,50" width="16" height="16" index="0" maxindex="12" timer-count="30" run="1" />
 
 			<text pos="50,180,250,200" crtext="808080" title="进度条：" />
 			
@@ -388,8 +389,13 @@ width-lt,height-lt,width-rb,height-rb" />
 				pos="350,100,450,128" tip="普通菜单，背景2，向上显示"
 				action="menu:duivision\menu_3.xml" menupos="0,0,0,-0" />
 			
-			<text pos="70,180,320,200" crtext="808080" title="带边框的矩形" />
-			<frame pos="50,150,350,350" crframe="800000" frame-width="2" dashstyle="dot" color="80,80,128" />
+			<text pos="50,160,320,180" crtext="808080" title="带边框的矩形：" />
+			<rect pos="50,180,300,220" crframe="800000" frame-width="2" dashstyle="solid"
+				color="192,192,64" />
+			<rect pos="50,230,300,270" crframe="000000" frame-width="1" dashstyle="dash"
+				color="64,192,192" transparent-type="vertical" begin-transparent="20" end-transparent="80" />
+			<rect pos="50,280,300,320" crframe="000080" frame-width="1" dashstyle="dot"
+				color="192,64,192" transparent-type="horizontal" begin-transparent="20" end-transparent="80" />
 		</tab>
 		
 	</tabctrl>

@@ -91,6 +91,7 @@ void CDuiHandlerMain::OnInit()
 	CDuiGridCtrl* pGridCtrl = (CDuiGridCtrl*)GetControl(_T("gridctrl_1"));
 	if(pGridCtrl)
 	{
+		// 添加链接按钮
 		CLinkButton* pControl = (CLinkButton*)DuiSystem::CreateControlByName(_T("linkbtn"), NULL, NULL);
 		if(pControl)
 		{
@@ -99,6 +100,17 @@ void CDuiHandlerMain::OnInit()
 			pControl->SetTitle(_T("更新内容"));
 			pControl->SetLink(_T("http://www.blueantstudio.net"));
 			pGridCtrl->AddSubItemControl(1, 0, pControl);
+		}
+
+		// 添加输入框
+		CDuiEdit* pControlEdit = (CDuiEdit*)DuiSystem::CreateControlByName(_T("edit"), m_pDlg->GetSafeHwnd(), NULL);
+		if(pControlEdit)
+		{
+			pControlEdit->SetName(_T("edit_gridctrl_btnName"));
+			pControlEdit->SetTitle(_T("100"));
+			pControlEdit->SetPosStr(_T("220, 10, -20, 40"));
+			pControlEdit->OnAttributeSkin(_T("skin:IDB_EDIT"), TRUE);
+			pGridCtrl->AddSubItemControl(4, 0, pControlEdit);
 		}
 	}
 
@@ -516,6 +528,36 @@ LRESULT CDuiHandlerMain::OnDuiMsgGridCtrlDelBtnClick(UINT uID, CString strName, 
 	CDuiGridCtrl* pGridCtrl = (CDuiGridCtrl*)GetControl(_T("gridctrl_1"));
 	pGridCtrl->DeleteRow(3);
 	
+	return TRUE;
+}
+
+// 拖拽文件到表格控件消息处理
+LRESULT CDuiHandlerMain::OnDuiMsgGridCtrlDropFile(UINT uID, CString strName, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	// 拖拽消息的wParam表格鼠标位置，lParam表示当前拖拽的文件全路径名
+	CDuiGridCtrl* pGridCtrl = (CDuiGridCtrl*)GetControl(_T("gridctrl_1"));
+	CPoint* pptDropFile = (CPoint*)wParam;
+	CString* pstrDropFile = (CString*)lParam;
+	// 截取文件名
+	CString strFileName = *pstrDropFile;
+	int nPos = strFileName.ReverseFind(_T('\\'));
+	strFileName.Delete(0, nPos+1);
+	// 在表格中插入一行文件信息
+	if(pGridCtrl)
+	{
+		CString strId = *pstrDropFile;
+		int nRow = pGridCtrl->InsertRow(-1,	// 插入的行序号,-1表示添加到最后
+			strId,							// 行id字符串
+			-1,								// 行左侧图片(索引图片方式,无索引图片填-1)
+			Color(0, 0, 0, 0),				// 行文字颜色,全0表示默认(不使用行文字颜色,使用表格全局颜色)
+			_T("skins\\icon\\NewIcons005.png"),	// 行左侧的图片文件
+			-1,								// 行右侧图片(索引图片方式,无索引图片填-1)
+			_T(""),							// 行右侧的图片文件
+			0);
+		pGridCtrl->SetSubItem(nRow, 0, strFileName, *pstrDropFile, TRUE);
+		pGridCtrl->SetSubItem(nRow, 1, _T("文件"));
+	}
+
 	return TRUE;
 }
 
